@@ -1,8 +1,8 @@
 export const TAU = 2 * Math.PI;
-export const TURN_SPEED = 3.2; // радіани/с
-export const ACCELERATION = 240; // одиниці арени/с²
-export const DRAG = 0.75; // коефіцієнт гальмування
-export const MAX_SPEED = 290; // одиниці арени/с
+export const TURN_SPEED = 3.2; 
+export const ACCELERATION = 240; 
+export const DRAG = 0.75; 
+export const MAX_SPEED = 290; 
 
 export function createShip(x, y) {
   return { x, y, vx: 0, vy: 0, angle: 0, thrust: false };

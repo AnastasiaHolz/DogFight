@@ -41,7 +41,6 @@ export function createInput(target) {
 
   return {
     isDown: (code) => down.has(code),
-    // Set.delete повертає true лише тоді, коли запис існував.
     justPressed: (code) => pressed.delete(code),
     destroy() {
       target.removeEventListener("keydown", onKeyDown);

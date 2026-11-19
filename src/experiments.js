@@ -136,7 +136,6 @@ export function createExperiment() {
       if (!isFlight) return dt;
       const remaining = FLIGHT_SECONDS - flightTime;
       if (remaining < EPSILON) return 0;
-      // Для змінного кроку обрізаємо лише останній залишок до 5.000 с.
       const physicsDt = mode === "fixed" ? dt : Math.min(dt, remaining);
       flightTime += physicsDt;
       flightSteps += 1;
@@ -145,15 +144,12 @@ export function createExperiment() {
 
     beforeDraw() {
       if (stress) {
-        // Однакова кількість операцій за кадр у всіх чотирьох прогонах зі stress=1.
-        // На швидкому ПК простій сцені може бути замало CPU 6× для зниження FPS.
         for (let i = 0; i < 1_000_000; i += 1) {
           workSeed = Math.imul(workSeed ^ i, 31);
         }
       }
       if (mode === "busy" && (frames + 1) % 60 === 0) {
         const start = performance.now();
-        // Навмисно лише для досліду: 100 мс не віддаємо головний потік.
         while (performance.now() < start + 100) {}
         blocks += 1;
       }

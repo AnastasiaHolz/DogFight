@@ -2,8 +2,6 @@ export const STEP = 1 / 60;
 const MAX_FRAME_SECONDS = 0.25;
 const EPSILON = 1e-9;
 
-// Звичайна гра використовує тільки rAF та фіксований крок.
-// clock і variable потрібні, щоб окремо відтворити два досліди.
 export function createLoop({
   step = STEP,
   simulate,

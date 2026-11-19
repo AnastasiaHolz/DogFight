@@ -11,8 +11,6 @@ export function createCanvas(canvas) {
     if (canvas.width !== pixelsWide) canvas.width = pixelsWide;
     if (canvas.height !== pixelsHigh) canvas.height = pixelsHigh;
 
-    // Малюємо у CSS-пікселях, а буфер зображення має більше фізичних пікселів.
-    // setTransform замінює масштаб, а не множить його при кожному кадрі.
     ctx.setTransform(
       pixelsWide / (width || 1),
       0,

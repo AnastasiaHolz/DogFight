@@ -89,7 +89,6 @@ export function drawScene({ ctx, width, height }, ship, stats) {
   ctx.fillStyle = "#101c2b";
   ctx.fillRect(0, 0, width, height);
 
-  // Арена має постійний розмір у симуляції. Зміна вікна лише масштабує картинку.
   const scale = Math.min(width / ARENA.width, height / ARENA.height);
   const offsetX = (width - ARENA.width * scale) / 2;
   const offsetY = (height - ARENA.height * scale) / 2;
@@ -103,7 +102,6 @@ export function drawScene({ ctx, width, height }, ship, stats) {
   ctx.fillRect(0, 0, ARENA.width, ARENA.height);
   drawGrid(ctx);
 
-  // Біля краю малюємо копію з іншого боку, щоб корабель не обрізався різко.
   const xs = [0];
   const ys = [0];
   if (ship.x < 28) xs.push(ARENA.width);

@@ -62,7 +62,6 @@ if (experiment) {
   loop.start();
 }
 
-// Vite виконує при гарячому оновленні, щоб старі слухачі і цикл не лишались.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     loop.stop();
