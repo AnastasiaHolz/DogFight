@@ -1,0 +1,6 @@
+{
+  "files": { "includes": ["**", "!**/dist", "!**/package-lock.json"] },
+  "formatter": { "enabled": true, "indentStyle": "space" },
+  "linter": { "enabled": true, "rules": { "preset": "recommended" } },
+  "javascript": { "formatter": { "quoteStyle": "double" } }
+}

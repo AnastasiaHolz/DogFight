@@ -1,0 +1,21 @@
+{
+  "name": "dogfight",
+  "version": "1.0.0",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node --test",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "biome check .",
+    "format": "biome format --write ."
+  },
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
+    "vite": "^8.3.8"
+  }
+}

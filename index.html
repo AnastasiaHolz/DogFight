@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a101b" />
+    <title>Dogfight — Lab 01</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">JAVASCRIPT / LAB 01</p>
+        <h1>Dogfight <span>·</span> Тренувальна орбіта</h1>
+        <p>Літай між зірками. Вилітаєш за край — з’являєшся з іншого боку.</p>
+      </header>
+      <canvas id="arena" aria-label="Ігрова арена з космічним кораблем">
+        Для гри потрібна підтримка Canvas 2D.
+      </canvas>
+      <p class="keys">
+        <kbd>W</kbd> / <kbd>↑</kbd> тяга
+        <span>·</span>
+        <kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd> поворот
+        <span>·</span>
+        <kbd>R</kbd> скинути
+      </p>
+      <section id="experiment" hidden aria-labelledby="experiment-title">
+        <h2 id="experiment-title">Дослід</h2>
+        <p id="experiment-status" aria-live="polite"></p>
+        <button id="experiment-start" type="button">Почати вимірювання</button>
+        <a href="./">Повернутися до звичайної гри</a>
+        <pre id="experiment-result"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
