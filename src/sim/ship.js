@@ -63,7 +63,7 @@ export class Ship extends Entity {
       : undefined;
 
     this.#cooldown = homing ? 0.42 : 0.22;
-    return world.spawn(
+    const shot = world.spawn(
       new Bullet({
         pos: wrapPosition(muzzle, world.arena),
         vel: velocity,
@@ -72,6 +72,8 @@ export class Ship extends Entity {
         homing: guidance,
       }),
     );
+    world.emit("fired", { team, entityId: this.id, bulletId: shot.id });
+    return shot;
   }
 
   update(dt, world, input = NO_INPUT) {

@@ -1,0 +1,8 @@
+[
+  { "id": "ships", "kind": "image", "url": "/assets/ships.png" },
+  { "id": "objects", "kind": "image", "url": "/assets/objects.png" },
+  { "id": "fired", "kind": "audio", "url": "/assets/fired.wav" },
+  { "id": "hit", "kind": "audio", "url": "/assets/hit.wav" },
+  { "id": "exploded", "kind": "audio", "url": "/assets/exploded.wav" },
+  { "id": "arena", "kind": "json", "url": "/assets/arena.json" }
+]

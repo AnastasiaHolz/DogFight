@@ -10,23 +10,23 @@ export function interpolateShip(previous, current, alpha) {
   };
 }
 
-function drawGrid(ctx) {
-  ctx.strokeStyle = "#233950";
+function drawGrid(ctx, arena) {
+  ctx.strokeStyle = arena.grid ?? "#233950";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  for (let x = 0; x <= ARENA.width; x += 48) {
+  for (let x = 0; x <= arena.width; x += 48) {
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, ARENA.height);
+    ctx.lineTo(x, arena.height);
   }
-  for (let y = 0; y <= ARENA.height; y += 45) {
+  for (let y = 0; y <= arena.height; y += 45) {
     ctx.moveTo(0, y);
-    ctx.lineTo(ARENA.width, y);
+    ctx.lineTo(arena.width, y);
   }
   ctx.stroke();
   ctx.fillStyle = "#6a9ab5";
   for (let i = 0; i < 40; i += 1) {
-    const x = (i * 137 + 17) % ARENA.width;
-    const y = (i * 79 + 29) % ARENA.height;
+    const x = (i * 137 + 17) % arena.width;
+    const y = (i * 79 + 29) % arena.height;
     ctx.fillRect(x, y, i % 4 === 0 ? 2 : 1, 1);
   }
 }
@@ -85,32 +85,32 @@ export function drawHud(ctx, stats) {
   ctx.fillText(`frame ms ${stats.frameMs.toFixed(1)}`, 21, 65);
 }
 
-export function drawArena({ ctx, width, height }, paint) {
+export function drawArena({ ctx, width, height }, paint, arena = ARENA) {
   ctx.fillStyle = "#101c2b";
   ctx.fillRect(0, 0, width, height);
-  const scale = Math.min(width / ARENA.width, height / ARENA.height);
-  const offsetX = (width - ARENA.width * scale) / 2;
-  const offsetY = (height - ARENA.height * scale) / 2;
+  const scale = Math.min(width / arena.width, height / arena.height);
+  const offsetX = (width - arena.width * scale) / 2;
+  const offsetY = (height - arena.height * scale) / 2;
   ctx.save();
   ctx.translate(offsetX, offsetY);
   ctx.scale(scale, scale);
   ctx.beginPath();
-  ctx.rect(0, 0, ARENA.width, ARENA.height);
+  ctx.rect(0, 0, arena.width, arena.height);
   ctx.clip();
-  ctx.fillStyle = "#132237";
-  ctx.fillRect(0, 0, ARENA.width, ARENA.height);
-  drawGrid(ctx);
+  ctx.fillStyle = arena.background ?? "#132237";
+  ctx.fillRect(0, 0, arena.width, arena.height);
+  drawGrid(ctx, arena);
   paint(ctx);
   ctx.restore();
 }
 
-export function drawWrapped(ctx, x, y, margin, paint) {
+export function drawWrapped(ctx, x, y, margin, paint, arena = ARENA) {
   const xs = [0];
   const ys = [0];
-  if (x < margin) xs.push(ARENA.width);
-  if (x > ARENA.width - margin) xs.push(-ARENA.width);
-  if (y < margin) ys.push(ARENA.height);
-  if (y > ARENA.height - margin) ys.push(-ARENA.height);
+  if (x < margin) xs.push(arena.width);
+  if (x > arena.width - margin) xs.push(-arena.width);
+  if (y < margin) ys.push(arena.height);
+  if (y > arena.height - margin) ys.push(-arena.height);
   for (const dx of xs) {
     for (const dy of ys) paint(ctx, x + dx, y + dy);
   }

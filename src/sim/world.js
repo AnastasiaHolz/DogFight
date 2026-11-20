@@ -10,10 +10,12 @@ export class World {
   constructor({
     arena = ARENA,
     findPairs = collisionPairs,
+    events = new EventTarget(),
     onCollision = () => {},
   } = {}) {
     this.arena = arena;
     this.findPairs = findPairs;
+    this.events = events;
     this.onCollision = onCollision;
   }
 
@@ -29,6 +31,10 @@ export class World {
     entity.alive = false;
     this.#dead.add(id);
     return true;
+  }
+
+  emit(type, detail) {
+    this.events.dispatchEvent(new CustomEvent(type, { detail }));
   }
 
   get(id) {

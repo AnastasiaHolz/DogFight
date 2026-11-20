@@ -4,19 +4,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a101b" />
-    <title>Dogfight — Lab 02</title>
+    <title>Dogfight — Lab 03</title>
   </head>
   <body>
     <main>
       <header>
-        <p class="eyebrow">JAVASCRIPT / LAB 02</p>
+        <p class="eyebrow">JAVASCRIPT / LAB 03</p>
         <h1>Dogfight <span>·</span> Орбітальна арена</h1>
-        <p>Збивай астероїди, ухиляйся від дрона й підбирай жовтий щит.</p>
+        <p>Передпольотна підготовка, вибір арени й локальні бої.</p>
       </header>
       <canvas id="arena" aria-label="Ігрова арена з космічним кораблем">
         Для гри потрібна підтримка Canvas 2D.
       </canvas>
-      <p class="keys">
+      <section id="loading-panel" class="panel" aria-label="Завантаження ресурсів">
+        <div class="action-row">
+          <button id="load-start" type="button">Почати завантаження</button>
+          <button id="load-cancel" type="button" hidden>Скасувати</button>
+          <p id="load-status" role="status">Зображення, арена й звукові ефекти.</p>
+        </div>
+      </section>
+      <section id="lobby-panel" class="panel lobby" aria-labelledby="lobby-title" hidden>
+        <p class="eyebrow">МІСІЯ / ВИБІР КІМНАТИ</p>
+        <h2 id="lobby-title">Лобі</h2>
+        <p id="startup-summary"></p>
+        <form>
+          <label for="pilot">Ім’я пілота</label>
+          <input id="pilot" name="pilot" placeholder="Наприклад, Nova" autocomplete="nickname" maxlength="24" required />
+          <label for="room">Кімната</label>
+          <select id="room" name="room" required>
+            <option value="">Отримуємо список…</option>
+          </select>
+          <p id="room-summary"></p>
+          <div class="action-row">
+            <button type="submit" disabled>Join</button>
+            <button id="room-refresh" type="button">Оновити список</button>
+          </div>
+        </form>
+        <p id="rooms-status" role="status">Отримуємо список кімнат…</p>
+      </section>
+      <section id="game-panel" hidden aria-label="Керування грою">
+        <div class="action-row game-actions">
+          <button id="leave-room" type="button">Повернутися в лобі</button>
+          <button id="mute-audio" type="button" aria-pressed="false">Вимкнути звук</button>
+          <p id="game-room"></p>
+        </div>
+      </section>
+      <p id="keys" class="keys" hidden>
         <kbd>W</kbd> / <kbd>↑</kbd> тяга
         <span>·</span>
         <kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd> поворот

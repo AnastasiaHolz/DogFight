@@ -66,3 +66,78 @@ pre {
   overflow-x: auto;
   line-height: 1.5;
 }
+[hidden] {
+  display: none;
+}
+.panel {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border: 1px solid #2a415a;
+  border-radius: 12px;
+  background: #111c2c;
+}
+.lobby {
+  max-width: 520px;
+  margin: 32px auto;
+  padding: clamp(20px, 4vw, 34px);
+}
+.lobby h2 {
+  margin: 4px 0 10px;
+  font-size: 2rem;
+}
+.lobby .eyebrow {
+  margin: 0;
+  color: #79f3d1;
+  font:
+    600 0.78rem ui-monospace,
+    monospace;
+  letter-spacing: 0.13em;
+}
+.lobby form {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+.lobby input,
+.lobby select {
+  padding: 9px 12px;
+  border: 1px solid #395775;
+  border-radius: 6px;
+  background: #0c1524;
+  color: inherit;
+  font: inherit;
+}
+.action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.action-row p,
+.lobby p {
+  color: #abc1dc;
+}
+.action-row p {
+  margin: 0;
+}
+.game-actions {
+  margin-top: 16px;
+}
+button:not(:disabled) {
+  cursor: pointer;
+}
+#load-start,
+.lobby button[type="submit"]:not(:disabled) {
+  background: #86f6d1;
+  color: #0b2125;
+  border-color: #86f6d1;
+  font-weight: 650;
+}
+#room-summary {
+  min-height: 1.4em;
+  margin: 2px 0 10px;
+}
+#rooms-status,
+#startup-summary {
+  font-size: 0.9rem;
+}

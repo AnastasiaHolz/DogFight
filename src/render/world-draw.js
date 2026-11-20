@@ -1,5 +1,5 @@
-import { ARENA, lerpWrapped } from "../sim/arena.js";
-import { drawArena, drawHud, drawShip, drawWrapped } from "./draw.js";
+import { lerpWrapped } from "../sim/arena.js";
+import { drawArena, drawWrapped } from "./draw.js";
 
 const TAU = 2 * Math.PI;
 
@@ -18,25 +18,24 @@ function ring(ctx, x, y, radius, color) {
   ctx.stroke();
 }
 
-function asteroid(ctx, entity, x, y, angle) {
+function tile(ctx, sheet, frame, x, y, size, angle = 0) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
+  ctx.drawImage(sheet, frame * 64, 0, 64, 64, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+function flame(ctx, x, y, angle) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = "#ffb86f";
   ctx.beginPath();
-  for (const [i, factor] of [1, 0.78, 1, 0.88, 1, 0.74, 0.96, 0.87].entries()) {
-    const a = (i / 8) * TAU;
-    const px = Math.cos(a) * entity.radius * factor;
-    const py = Math.sin(a) * entity.radius * factor;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  ctx.fillStyle = entity.homing ? "#553a71" : "#5c5559";
-  ctx.strokeStyle = entity.homing ? "#d0a4ff" : "#c9a68e";
-  ctx.lineWidth = 2;
+  ctx.moveTo(-13, -4);
+  ctx.lineTo(-27, 0);
+  ctx.lineTo(-13, 4);
   ctx.fill();
-  ctx.stroke();
-  circle(ctx, entity.radius * 0.3, 0, entity.radius * 0.18, "#282b47");
   ctx.restore();
 }
 
@@ -54,14 +53,23 @@ function pickup(ctx, x, y) {
   ctx.fill();
 }
 
-function paintEntity(ctx, entity, x, y, angle) {
+function paintEntity(ctx, entity, x, y, angle, assets) {
   switch (entity.kind) {
     case "ship": {
       if (entity.shield > 0 || entity.protected) {
         ring(ctx, x, y, 23, entity.shield > 0 ? "#ffdf70" : "#91bdf58a");
       }
       const color = entity.team === "player" ? "#64e8d1" : "#f98c9e";
-      drawShip(ctx, { x, y, angle, thrust: entity.thrust, color });
+      if (entity.thrust) flame(ctx, x, y, angle);
+      tile(
+        ctx,
+        assets.ships,
+        entity.team === "player" ? 0 : 1,
+        x,
+        y,
+        54,
+        angle,
+      );
       if (entity.team === "rival") {
         ctx.fillStyle = "#071323";
         ctx.fillRect(x - 15, y - 28, 30, 4);
@@ -71,16 +79,19 @@ function paintEntity(ctx, entity, x, y, angle) {
       break;
     }
     case "asteroid":
-      asteroid(ctx, entity, x, y, angle);
+      tile(
+        ctx,
+        assets.objects,
+        entity.homing ? 1 : 0,
+        x,
+        y,
+        entity.radius * 2.2,
+        angle,
+      );
       break;
     case "bullet": {
-      const color = entity.homing
-        ? "#9ac7ff"
-        : entity.team === "player"
-          ? "#f6ffd2"
-          : "#ffa480";
-      circle(ctx, x, y, entity.radius, color);
-      if (entity.homing) ring(ctx, x, y, entity.radius + 3, color);
+      const frame = entity.homing ? 3 : entity.team === "player" ? 2 : 4;
+      tile(ctx, assets.objects, frame, x, y, entity.radius * 3.5);
       break;
     }
     case "pickup":
@@ -100,54 +111,44 @@ function paintEntity(ctx, entity, x, y, angle) {
   }
 }
 
-function paintAtInterpolatedPosition(ctx, entity, alpha) {
+function paintAtInterpolatedPosition(ctx, entity, alpha, assets, arena) {
   const x =
     entity.edge === "wrap"
-      ? lerpWrapped(entity.prevPos.x, entity.pos.x, alpha, ARENA.width)
+      ? lerpWrapped(entity.prevPos.x, entity.pos.x, alpha, arena.width)
       : entity.prevPos.x + (entity.pos.x - entity.prevPos.x) * alpha;
   const y =
     entity.edge === "wrap"
-      ? lerpWrapped(entity.prevPos.y, entity.pos.y, alpha, ARENA.height)
+      ? lerpWrapped(entity.prevPos.y, entity.pos.y, alpha, arena.height)
       : entity.prevPos.y + (entity.pos.y - entity.prevPos.y) * alpha;
   const angle = lerpWrapped(entity.prevAngle, entity.angle, alpha, TAU);
 
   if (entity.edge === "wrap") {
     const margin = entity.kind === "explosion" ? 76 : 34;
-    drawWrapped(ctx, x, y, margin, (context, frameX, frameY) => {
-      paintEntity(context, entity, frameX, frameY, angle);
-    });
-  } else {
-    paintEntity(ctx, entity, x, y, angle);
-  }
-}
-
-function drawScore({ ctx, width }, game) {
-  const x = width - 137;
-  ctx.fillStyle = "#0b1523";
-  ctx.fillRect(x, 12, 125, 64);
-  ctx.fillStyle = "#edf5ff";
-  ctx.font = "13px monospace";
-  ctx.fillText(`SCORE  ${game.score}`, x + 8, 31);
-  ctx.fillText(`HP     ${game.player.hp}`, x + 8, 48);
-  if (game.respawnIn !== null) {
-    ctx.fillStyle = "#ffb887";
-    ctx.fillText(`RESPAWN ${game.respawnIn.toFixed(1)}s`, x + 8, 65);
-  } else {
-    ctx.fillStyle = game.player.shield > 0 ? "#ffdf70" : "#a7b8cd";
-    ctx.fillText(
-      `SHIELD ${game.player.shield > 0 ? `${game.player.shield.toFixed(1)}s` : "—"}`,
-      x + 8,
-      65,
+    drawWrapped(
+      ctx,
+      x,
+      y,
+      margin,
+      (context, frameX, frameY) => {
+        paintEntity(context, entity, frameX, frameY, angle, assets);
+      },
+      arena,
     );
+  } else {
+    paintEntity(ctx, entity, x, y, angle, assets);
   }
 }
 
-export function drawWorld(surface, game, alpha, stats) {
-  drawArena(surface, (ctx) => {
-    for (const entity of game.world) {
-      if (entity.alive) paintAtInterpolatedPosition(ctx, entity, alpha);
-    }
-  });
-  drawHud(surface.ctx, stats);
-  drawScore(surface, game);
+export function drawWorld(surface, game, alpha, assets) {
+  const arena = game.world.arena;
+  drawArena(
+    surface,
+    (ctx) => {
+      for (const entity of game.world) {
+        if (entity.alive)
+          paintAtInterpolatedPosition(ctx, entity, alpha, assets, arena);
+      }
+    },
+    arena,
+  );
 }

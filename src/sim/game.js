@@ -1,4 +1,4 @@
-import { shortestDelta } from "./arena.js";
+import { ARENA, shortestDelta } from "./arena.js";
 import { Asteroid } from "./asteroid.js";
 import { offsetBetween } from "./collision.js";
 import { createHoming } from "./components.js";
@@ -9,7 +9,6 @@ import { Vector2 } from "./vector.js";
 import { World } from "./world.js";
 
 const RESPAWN_SECONDS = 2;
-const CENTER = new Vector2(480, 270);
 const TAU = 2 * Math.PI;
 
 function firstOf(kind, a, b) {
@@ -21,45 +20,57 @@ export class Game {
   #respawns = new Map();
   #nextRivalShot = 1;
 
-  constructor({ random = Math.random, demo = true } = {}) {
+  constructor({
+    random = Math.random,
+    demo = true,
+    arena = ARENA,
+    events,
+  } = {}) {
     this.random = random;
     this.time = 0;
     this.score = 0;
     this.world = new World({
+      arena,
+      events,
       onCollision: (a, b) => this.resolveCollision(a, b),
     });
-    this.player = this.world.spawn(new Ship({ pos: CENTER }));
+    this.player = this.world.spawn(
+      new Ship({ pos: new Vector2(arena.width / 2, arena.height / 2) }),
+    );
 
     if (demo) this.populate();
   }
 
   populate() {
+    const { width, height, extraAsteroids = 0 } = this.world.arena;
+    const place = (x, y) =>
+      new Vector2((x / ARENA.width) * width, (y / ARENA.height) * height);
     this.rival = this.world.spawn(
       new Ship({
-        pos: new Vector2(819, 173),
+        pos: place(819, 173),
         team: "rival",
         angle: Math.PI,
       }),
     );
 
-    this.world.spawn(new Pickup({ pos: new Vector2(585, 270) }));
+    this.world.spawn(new Pickup({ pos: place(585, 270) }));
     this.world.spawn(
       new Asteroid({
-        pos: new Vector2(714, 270),
+        pos: place(714, 270),
         vel: new Vector2(-18, 3),
         radius: 27,
       }),
     );
     this.world.spawn(
       new Asteroid({
-        pos: new Vector2(281, 395),
+        pos: place(281, 395),
         vel: new Vector2(32, -15),
         radius: 29,
       }),
     );
     this.world.spawn(
       new Asteroid({
-        pos: new Vector2(690, 425),
+        pos: place(690, 425),
         vel: new Vector2(-24, -18),
         radius: 22,
         homing: createHoming({
@@ -71,6 +82,15 @@ export class Game {
         }),
       }),
     );
+    for (let i = 0; i < extraAsteroids; i += 1) {
+      this.world.spawn(
+        new Asteroid({
+          pos: place(170 + i * 520, 110 + i * 350),
+          vel: new Vector2(25 - i * 12, 18),
+          radius: 22 + i * 3,
+        }),
+      );
+    }
   }
 
   get respawnIn() {
@@ -156,6 +176,12 @@ export class Game {
     }
     if (sourceTeam === "player")
       this.score += entity.kind === "asteroid" ? 100 : 250;
+    this.world.emit("exploded", {
+      entityId: entity.id,
+      kind: entity.kind,
+      sourceTeam,
+      score: this.score,
+    });
   }
 
   resolveCollision(a, b) {
@@ -168,7 +194,13 @@ export class Game {
           target.team !== bullet.team);
       if (!validTarget) return;
       this.world.despawn(bullet.id);
-      if (target.damage(bullet.damage)) this.destroy(target, bullet.team);
+      const destroyed = target.damage(bullet.damage);
+      this.world.emit("hit", {
+        entityId: target.id,
+        kind: target.kind,
+        sourceTeam: bullet.team,
+      });
+      if (destroyed) this.destroy(target, bullet.team);
       return;
     }
 
@@ -176,8 +208,12 @@ export class Game {
     if (!ship) return;
     if (other.kind === "pickup") {
       if (ship.team === "player") other.collect(ship, this.world);
-    } else if (other.kind === "asteroid" && ship.damage(42)) {
-      this.destroy(ship);
+    } else if (other.kind === "asteroid") {
+      const before = ship.hp;
+      const destroyed = ship.damage(42);
+      if (ship.hp !== before)
+        this.world.emit("hit", { entityId: ship.id, kind: ship.kind });
+      if (destroyed) this.destroy(ship);
     }
   }
 }
