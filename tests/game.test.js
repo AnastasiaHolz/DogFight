@@ -4,7 +4,7 @@ import { createInput } from "../src/input.js";
 import { createLoop, STEP } from "../src/loop.js";
 import { interpolateShip } from "../src/render/draw.js";
 import { ARENA, wrap, wrapShip } from "../src/sim/arena.js";
-import { createShip, integrate, MAX_SPEED, TAU } from "../src/sim/ship.js";
+import { createShip, integrate, MAX_SPEED, TAU } from "../src/sim/flight.js";
 
 test("integrate не змінює вхідний об’єкт і гальмує без тяги", () => {
   const ship = Object.freeze(createShip(0, 0));

@@ -6,6 +6,8 @@ const controls = new Set([
   "KeyA",
   "KeyD",
   "KeyR",
+  "Space",
+  "KeyH",
 ]);
 
 export function createInput(target) {
@@ -21,7 +23,12 @@ export function createInput(target) {
     ) {
       return;
     }
-    if (event.code.startsWith("Arrow")) event.preventDefault();
+    if (
+      event.code.startsWith("Arrow") ||
+      (event.code === "Space" && !event.target?.closest?.("button, a"))
+    ) {
+      event.preventDefault();
+    }
     if (!event.repeat && !down.has(event.code)) pressed.add(event.code);
     down.add(event.code);
   }

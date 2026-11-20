@@ -1,66 +1,48 @@
 import "./style.css";
 import { createExperiment } from "./experiments.js";
 import { createInput } from "./input.js";
+import { startLab01 } from "./lab01.js";
 import { createLoop } from "./loop.js";
 import { createCanvas } from "./render/canvas.js";
-import { drawScene, interpolateShip } from "./render/draw.js";
-import { ARENA, wrapShip } from "./sim/arena.js";
-import { createShip, integrate } from "./sim/ship.js";
+import { drawWorld } from "./render/world-draw.js";
+import { Game } from "./sim/game.js";
 
 const canvas = createCanvas(document.querySelector("#arena"));
 const keyboard = createInput(window);
 const experiment = createExperiment();
-let current = createShip(ARENA.width / 2, ARENA.height / 2);
-let previous = current;
-
-function resetShip() {
-  current = createShip(ARENA.width / 2, ARENA.height / 2);
-  previous = current;
-}
 
 function readControls() {
   const left = keyboard.isDown("KeyA") || keyboard.isDown("ArrowLeft");
   const right = keyboard.isDown("KeyD") || keyboard.isDown("ArrowRight");
+  const fire = keyboard.justPressed("Space") || keyboard.isDown("Space");
+  const homing = keyboard.justPressed("KeyH") || keyboard.isDown("KeyH");
 
   return {
     turn: Number(right) - Number(left),
     thrust: keyboard.isDown("KeyW") || keyboard.isDown("ArrowUp"),
+    fire,
+    homing,
   };
 }
 
-const loop = createLoop({
-  clock: experiment?.clock,
-  variable: experiment?.variable,
-
-  simulate(dt) {
-    if (keyboard.justPressed("KeyR") && !experiment?.isFlight) resetShip();
-    const physicsDt = experiment?.flightStep(dt) ?? dt;
-    if (physicsDt === 0) return;
-    const input = experiment?.isFlight
-      ? { turn: 0, thrust: true }
-      : readControls();
-    previous = current;
-    current = wrapShip(integrate(current, input, physicsDt), ARENA);
-  },
-
-  render(alpha, stats) {
-    experiment?.beforeDraw();
-    const ship = interpolateShip(previous, current, alpha);
-    drawScene(canvas.resize(), ship, stats);
-    experiment?.afterDraw(stats, current);
-  },
-});
-
-if (experiment) {
-  drawScene(canvas.resize(), current, {
-    stepsPerSecond: 0,
-    framesPerSecond: 0,
-    frameMs: 0,
+function startGame() {
+  let game = new Game();
+  const loop = createLoop({
+    simulate(dt) {
+      if (keyboard.justPressed("KeyR")) game = new Game();
+      game.step(dt, readControls());
+    },
+    render(alpha, stats) {
+      drawWorld(canvas.resize(), game, alpha, stats);
+    },
   });
-  experiment.setup(loop, resetShip);
-} else {
   loop.start();
+  return loop;
 }
+
+const loop = experiment
+  ? startLab01({ canvas, keyboard, experiment, readControls })
+  : startGame();
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {

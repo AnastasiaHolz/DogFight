@@ -1,5 +1,5 @@
 import { ARENA, lerpWrapped } from "../sim/arena.js";
-import { TAU } from "../sim/ship.js";
+import { TAU } from "../sim/flight.js";
 
 export function interpolateShip(previous, current, alpha) {
   return {
@@ -69,8 +69,8 @@ export function drawShip(ctx, ship) {
       [-7, 0],
       [-12, 10],
     ],
-    "#64e8d1",
-    "#dfffef",
+    ship.color ?? "#64e8d1",
+    "#e8f9ff",
   );
   ctx.restore();
 }
@@ -85,10 +85,9 @@ export function drawHud(ctx, stats) {
   ctx.fillText(`frame ms ${stats.frameMs.toFixed(1)}`, 21, 65);
 }
 
-export function drawScene({ ctx, width, height }, ship, stats) {
+export function drawArena({ ctx, width, height }, paint) {
   ctx.fillStyle = "#101c2b";
   ctx.fillRect(0, 0, width, height);
-
   const scale = Math.min(width / ARENA.width, height / ARENA.height);
   const offsetX = (width - ARENA.width * scale) / 2;
   const offsetY = (height - ARENA.height * scale) / 2;
@@ -101,18 +100,27 @@ export function drawScene({ ctx, width, height }, ship, stats) {
   ctx.fillStyle = "#132237";
   ctx.fillRect(0, 0, ARENA.width, ARENA.height);
   drawGrid(ctx);
+  paint(ctx);
+  ctx.restore();
+}
 
+export function drawWrapped(ctx, x, y, margin, paint) {
   const xs = [0];
   const ys = [0];
-  if (ship.x < 28) xs.push(ARENA.width);
-  if (ship.x > ARENA.width - 28) xs.push(-ARENA.width);
-  if (ship.y < 28) ys.push(ARENA.height);
-  if (ship.y > ARENA.height - 28) ys.push(-ARENA.height);
-  for (const x of xs) {
-    for (const y of ys)
-      drawShip(ctx, { ...ship, x: ship.x + x, y: ship.y + y });
+  if (x < margin) xs.push(ARENA.width);
+  if (x > ARENA.width - margin) xs.push(-ARENA.width);
+  if (y < margin) ys.push(ARENA.height);
+  if (y > ARENA.height - margin) ys.push(-ARENA.height);
+  for (const dx of xs) {
+    for (const dy of ys) paint(ctx, x + dx, y + dy);
   }
+}
 
-  ctx.restore();
-  drawHud(ctx, stats);
+export function drawScene(surface, ship, stats) {
+  drawArena(surface, (ctx) => {
+    drawWrapped(ctx, ship.x, ship.y, 28, (context, x, y) => {
+      drawShip(context, { ...ship, x, y });
+    });
+  });
+  drawHud(surface.ctx, stats);
 }

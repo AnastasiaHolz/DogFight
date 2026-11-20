@@ -1,34 +1,101 @@
-export const TAU = 2 * Math.PI;
-export const TURN_SPEED = 3.2; 
-export const ACCELERATION = 240; 
-export const DRAG = 0.75; 
-export const MAX_SPEED = 290; 
+import { wrapPosition } from "./arena.js";
+import { Bullet } from "./bullet.js";
+import { createHoming } from "./components.js";
+import { Entity } from "./entity.js";
+import { integrate } from "./flight.js";
+import { Vector2 } from "./vector.js";
 
-export function createShip(x, y) {
-  return { x, y, vx: 0, vy: 0, angle: 0, thrust: false };
-}
+const MAX_HP = 100;
+const BULLET_SPEED = 460;
+const NO_INPUT = { turn: 0, thrust: false, fire: false, homing: false };
 
-export function integrate(ship, input, dt) {
-  const angle =
-    (((ship.angle + input.turn * TURN_SPEED * dt) % TAU) + TAU) % TAU;
-  const acceleration = input.thrust ? ACCELERATION : 0;
-  const damping = Math.exp(-DRAG * dt);
+export class Ship extends Entity {
+  #hp = MAX_HP;
+  #cooldown = 0;
+  #protection = 0;
+  #shield = 0;
 
-  let vx = (ship.vx + Math.cos(angle) * acceleration * dt) * damping;
-  let vy = (ship.vy + Math.sin(angle) * acceleration * dt) * damping;
-
-  const speed = Math.hypot(vx, vy);
-  if (speed > MAX_SPEED) {
-    vx *= MAX_SPEED / speed;
-    vy *= MAX_SPEED / speed;
+  constructor({ pos, angle = 0, team = "player", protection = 0 } = {}) {
+    super({ kind: "ship", pos, angle, radius: 15, edge: "wrap" });
+    this.team = team;
+    this.thrust = false;
+    this.#protection = protection;
   }
 
-  return {
-    x: ship.x + vx * dt,
-    y: ship.y + vy * dt,
-    vx,
-    vy,
-    angle,
-    thrust: input.thrust,
-  };
+  get hp() {
+    return this.#hp;
+  }
+
+  get shield() {
+    return this.#shield;
+  }
+
+  get protected() {
+    return this.#protection > 0;
+  }
+
+  grantShield(seconds) {
+    this.#shield = Math.max(this.#shield, seconds);
+  }
+
+  damage(amount) {
+    if (this.#shield > 0 || this.protected) return false;
+    this.#hp = Math.max(0, this.#hp - amount);
+    this.#protection = 0.28;
+    return this.#hp === 0;
+  }
+
+  fire(world, { homing = false } = {}) {
+    if (this.#cooldown > 1e-9 || !this.alive) return null;
+    const direction = Vector2.fromAngle(this.angle);
+    const muzzle = this.pos.add(direction.scale(23));
+    const velocity = this.vel.add(direction.scale(BULLET_SPEED));
+    const team = this.team;
+    const guidance = homing
+      ? createHoming({
+          kinds: ["asteroid", "ship"],
+          range: 375,
+          turnRate: 6,
+          speed: velocity.length(),
+          accepts: (target) =>
+            target.kind === "asteroid" || target.team !== team,
+        })
+      : undefined;
+
+    this.#cooldown = homing ? 0.42 : 0.22;
+    return world.spawn(
+      new Bullet({
+        pos: wrapPosition(muzzle, world.arena),
+        vel: velocity,
+        ownerId: this.id,
+        team,
+        homing: guidance,
+      }),
+    );
+  }
+
+  update(dt, world, input = NO_INPUT) {
+    this.#cooldown = Math.max(0, this.#cooldown - dt);
+    this.#protection = Math.max(0, this.#protection - dt);
+    this.#shield = Math.max(0, this.#shield - dt);
+
+    const state = integrate(
+      {
+        x: this.pos.x,
+        y: this.pos.y,
+        vx: this.vel.x,
+        vy: this.vel.y,
+        angle: this.angle,
+        thrust: this.thrust,
+      },
+      input,
+      dt,
+    );
+
+    this.pos = new Vector2(state.x, state.y);
+    this.vel = new Vector2(state.vx, state.vy);
+    this.angle = state.angle;
+    this.thrust = state.thrust;
+    if (input.fire || input.homing) this.fire(world, { homing: input.homing });
+  }
 }
