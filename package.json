@@ -21,9 +21,13 @@
     "test": "npm test --workspaces",
     "bench:replay": "npm run bench:replay -w server",
     "demo:loop": "npm run demo:loop -w server",
-    "bench:network": "npm run bench:network -w shared"
+    "bench:network": "npm run bench:network -w shared",
+    "typecheck": "npm run typecheck --workspaces"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.8"
+    "@biomejs/biome": "^2.6.8",
+    "typescript": "~5.9.3",
+    "@types/node": "^24.10.0",
+    "@types/ws": "^8.18.1"
   }
 }

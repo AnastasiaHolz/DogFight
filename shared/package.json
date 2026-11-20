@@ -4,10 +4,14 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./*.js"
+    "./*": "./*.ts"
   },
   "scripts": {
     "test": "node --test",
-    "bench:network": "node scripts/network-benchmark.js"
+    "bench:network": "node scripts/network-benchmark.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "zod": "^4.4.0"
   }
 }
