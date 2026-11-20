@@ -1,6 +1,6 @@
 import { drawHud } from "./draw.js";
 
-function drawScore({ ctx, width }, game, score) {
+export function drawScore({ ctx, width }, game, score) {
   const x = width - 137;
   ctx.fillStyle = "#0b1523";
   ctx.fillRect(x, 12, 125, 64);

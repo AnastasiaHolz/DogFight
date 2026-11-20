@@ -4,6 +4,7 @@ import { offsetBetween } from "./collision.js";
 import { createHoming } from "./components.js";
 import { Explosion } from "./explosion.js";
 import { Pickup } from "./pickup.js";
+import { seededRandom } from "./random.js";
 import { Ship } from "./ship.js";
 import { Vector2 } from "./vector.js";
 import { World } from "./world.js";
@@ -21,7 +22,7 @@ export class Game {
   #nextRivalShot = 1;
 
   constructor({
-    random = Math.random,
+    random = seededRandom(1),
     demo = true,
     arena = ARENA,
     events,

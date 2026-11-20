@@ -14,9 +14,10 @@ export async function createApp(
     onError,
     ...roomOptions,
   });
+  const matches = new Map();
   const server = createServer(
     { requestTimeout: 10_000, headersTimeout: 8_000 },
-    httpHandler(config, rooms, onError),
+    httpHandler(config, rooms, onError, matches),
   );
 
   server.on("error", (error) => {
@@ -29,7 +30,7 @@ export async function createApp(
       );
     else socket.destroy();
   });
-  const ws = attachWebSockets(server, rooms, { onError, ...sockets });
+  const ws = attachWebSockets(server, rooms, { onError, matches, ...sockets });
 
   let stopping;
   return {

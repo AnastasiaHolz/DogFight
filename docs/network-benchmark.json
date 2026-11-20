@@ -1,0 +1,23 @@
+{
+  "node": "v24.22.3",
+  "players": 4,
+  "tickRate": 30,
+  "snapshots": 480,
+  "hash": "46f28136",
+  "results": [
+    {
+      "codec": "json",
+      "snapshotBytes": 5668.077083333334,
+      "downKBps": 170.0423125,
+      "upKBps": 2.4719375,
+      "roundTripUs": 55.65201753472226
+    },
+    {
+      "codec": "binary",
+      "snapshotBytes": 945.09375,
+      "downKBps": 28.3528125,
+      "upKBps": 0.21,
+      "roundTripUs": 4.337143229166666
+    }
+  ]
+}

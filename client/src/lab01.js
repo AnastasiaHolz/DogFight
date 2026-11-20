@@ -1,7 +1,7 @@
+import { ARENA, wrapShip } from "@dogfight/shared/sim/arena";
+import { createShip, integrate } from "@dogfight/shared/sim/flight";
 import { createLoop } from "./loop.js";
 import { drawScene, interpolateShip } from "./render/draw.js";
-import { ARENA, wrapShip } from "./sim/arena.js";
-import { createShip, integrate } from "./sim/flight.js";
 
 export function startLab01({ canvas, keyboard, experiment, readControls }) {
   let current = createShip(ARENA.width / 2, ARENA.height / 2);

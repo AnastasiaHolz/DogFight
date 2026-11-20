@@ -1,4 +1,4 @@
-import { lerpWrapped } from "../sim/arena.js";
+import { lerpWrapped } from "@dogfight/shared/sim/arena";
 import { drawArena, drawWrapped } from "./draw.js";
 
 const TAU = 2 * Math.PI;

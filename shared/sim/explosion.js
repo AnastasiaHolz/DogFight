@@ -1,10 +1,11 @@
 import { Entity } from "./entity.js";
+import { seededRandom } from "./random.js";
 import { Vector2 } from "./vector.js";
 
 const DURATION = 0.55;
 
 export class Explosion extends Entity {
-  constructor({ pos, color, random = Math.random }) {
+  constructor({ pos, color, random = seededRandom(1) }) {
     super({ kind: "explosion", pos, collidable: false, edge: "wrap" });
     this.color = color;
     this.ttl = DURATION;

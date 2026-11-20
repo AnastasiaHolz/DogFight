@@ -5,7 +5,8 @@
   "type": "module",
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "shared"
   ],
   "engines": {
     "node": ">=24"
@@ -19,7 +20,8 @@
     "format": "biome format --write .",
     "test": "npm test --workspaces",
     "bench:replay": "npm run bench:replay -w server",
-    "demo:loop": "npm run demo:loop -w server"
+    "demo:loop": "npm run demo:loop -w server",
+    "bench:network": "npm run bench:network -w shared"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.8"

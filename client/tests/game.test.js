@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ARENA, wrap, wrapShip } from "@dogfight/shared/sim/arena";
+import {
+  createShip,
+  integrate,
+  MAX_SPEED,
+  TAU,
+} from "@dogfight/shared/sim/flight";
 import { createInput } from "../src/input.js";
 import { createLoop, STEP } from "../src/loop.js";
 import { interpolateShip } from "../src/render/draw.js";
-import { ARENA, wrap, wrapShip } from "../src/sim/arena.js";
-import { createShip, integrate, MAX_SPEED, TAU } from "../src/sim/flight.js";
 
 test("integrate не змінює вхідний об’єкт і гальмує без тяги", () => {
   const ship = Object.freeze(createShip(0, 0));

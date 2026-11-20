@@ -176,3 +176,21 @@ button:not(:disabled) {
   color: inherit;
   font: inherit;
 }
+.net-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px 20px;
+  margin-top: 14px;
+}
+.net-settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.net-settings input[type="number"] {
+  width: 4.2rem;
+  padding: 3px;
+}
+#network-panel summary {
+  cursor: pointer;
+}

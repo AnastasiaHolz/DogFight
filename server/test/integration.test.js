@@ -79,7 +79,8 @@ function waitMessage(socket, type, matches = () => true) {
       socket.off("message", receive);
       reject(new Error(`Missing ${type}`));
     }, 1500);
-    function receive(raw) {
+    function receive(raw, binary) {
+      if (binary) return;
       const event = JSON.parse(raw);
       if (event.type !== type || !matches(event)) return;
       clearTimeout(timer);

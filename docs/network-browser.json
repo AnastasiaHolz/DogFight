@@ -1,0 +1,74 @@
+{
+  "browser": "HeadlessChrome/153.0.8010.0",
+  "hash": "46f28136",
+  "before": {
+    "motionMs": 282.1,
+    "score": 0,
+    "hp": 100,
+    "rtt": 201,
+    "age": 113,
+    "down": 3555,
+    "up": 56,
+    "tick": 12,
+    "pending": 8,
+    "fix": 0,
+    "avg": 0,
+    "predict": false
+  },
+  "after": {
+    "motionMs": 27.9,
+    "score": 0,
+    "hp": 100,
+    "rtt": 202,
+    "age": 131,
+    "down": 1659,
+    "up": 0,
+    "tick": 4,
+    "pending": 4,
+    "fix": 0,
+    "avg": 0,
+    "predict": true
+  },
+  "drift": {
+    "baseline": 0,
+    "intentionallyBroken": 27.24,
+    "restored": 1.95
+  },
+  "battle": {
+    "a": {
+      "score": 850,
+      "hp": 30,
+      "rtt": 205,
+      "age": 102,
+      "down": 19383,
+      "up": 217,
+      "tick": 636,
+      "pending": 8,
+      "fix": 0,
+      "avg": 0,
+      "predict": true
+    },
+    "b": {
+      "score": 700,
+      "hp": 30,
+      "rtt": 201,
+      "age": 138,
+      "down": 116999,
+      "up": 2378,
+      "tick": 635,
+      "pending": 11,
+      "fix": 0,
+      "avg": 0,
+      "predict": true
+    },
+    "server": {
+      "room": "20b3ebb7-f1b2-4866-b7af-bb934e66b76e",
+      "tick": 639,
+      "tickRate": 30,
+      "durationMs": 0.31186733802819266,
+      "jitterMs": 0.9203423194233128,
+      "missedDeadlines": 0
+    },
+    "frames": 161
+  }
+}

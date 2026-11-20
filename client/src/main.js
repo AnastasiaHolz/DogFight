@@ -12,14 +12,15 @@ import { createInput } from "./input.js";
 import { startLab01 } from "./lab01.js";
 import { Lobby } from "./lobby/lobby.js";
 import { mountLobbyView } from "./lobby/view.js";
-import { createLoop } from "./loop.js";
 import { mountChatView } from "./network/chat-view.js";
 import { RoomConnection, webSocketUrl } from "./network/connection.js";
+import { startSession } from "./network/session.js";
+import {
+  mountNetworkSettings,
+  readNetworkSettings,
+} from "./network/settings.js";
 import { createCanvas } from "./render/canvas.js";
-import { createHud } from "./render/hud.js";
 import { drawLoading } from "./render/loading.js";
-import { drawWorld } from "./render/world-draw.js";
-import { Game } from "./sim/game.js";
 
 const arenaCanvas = document.querySelector("#arena");
 const canvas = createCanvas(arenaCanvas);
@@ -48,6 +49,12 @@ function startApplication() {
   const audio = new GameAudio();
   const lobby = new Lobby();
   const diagnostics = readDiagnostics(window.location.search);
+  const network = readNetworkSettings(window.location.search);
+  mountNetworkSettings(
+    network,
+    document.querySelector("#network-settings"),
+    signal,
+  );
   const loadingPanel = document.querySelector("#loading-panel");
   const lobbyPanel = document.querySelector("#lobby-panel");
   const gamePanel = document.querySelector("#game-panel");
@@ -145,46 +152,37 @@ function startApplication() {
     }
   }
 
-  function play({ room, playerName }) {
+  function play({ room, playerName, connection, seed, netId, codec }) {
     const override = { ...loaded.arena, ...room.arena };
     const arena = validArena(override) ? override : loaded.arena;
     const keyboard = createInput(window);
-    const events = new EventTarget();
-    const match = new AbortController();
-    const hud = createHud(events, match.signal);
-    let game = new Game({ arena, events });
-    audio.listen(events, loaded, match.signal);
     document.querySelector("#game-room").textContent =
       `${playerName} · ${room.name} · ${arena.width} × ${arena.height}`;
     arenaCanvas.tabIndex = 0;
     arenaCanvas.focus({ preventScroll: true });
-
-    const loop = createLoop({
-      simulate(dt) {
-        if (keyboard.justPressed("KeyR")) {
-          game = new Game({ arena, events });
-          hud.reset();
-        }
-        game.step(dt, readControls(keyboard));
-      },
-      render(alpha, stats) {
-        const surface = canvas.resize();
-        drawWorld(surface, game, alpha, loaded);
-        hud.draw(surface, game, stats);
-      },
+    const stop = startSession({
+      connection,
+      settings: network,
+      canvas,
+      keyboard,
+      assets: loaded,
+      audio,
+      readControls,
+      info: { seed, arena, netId, codec },
     });
-    loop.start();
     return () => {
-      loop.stop();
+      stop();
       keyboard.destroy();
-      match.abort();
     };
   }
 
   function enter({ room, playerName }) {
     notice.textContent = "";
+    const url = new URL(webSocketUrl(window.location));
+    if (!network.binary) url.searchParams.set("codec", "json");
     const connection = new RoomConnection({
-      url: webSocketUrl(window.location),
+      url: url.href,
+      network,
       room: room.id,
       name: playerName,
     });
@@ -207,7 +205,15 @@ function startApplication() {
       ({ detail }) => {
         replayId = detail.replayId;
         replayLink.href = `/api/replays/${encodeURIComponent(replayId)}`;
-        if (!stopLocal) stopLocal = play({ room: detail.room, playerName });
+        stopLocal?.();
+        stopLocal = play({
+          room: detail.room,
+          playerName,
+          connection,
+          netId: detail.player.netId,
+          seed: detail.seed,
+          codec: detail.codec,
+        });
       },
       networkOptions,
     );

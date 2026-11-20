@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { decodeInput, encodeSnapshot } from "@dogfight/shared/codec/binary";
+import { decodeJsonInput, encodeJson } from "@dogfight/shared/codec/json";
 import { WebSocket, WebSocketServer } from "ws";
+import { Match } from "./match.js";
 import {
   CLOSE,
   decode,
@@ -11,16 +14,24 @@ import {
 
 const MAX_QUEUED_BYTES = 64 * 1024;
 
-export function send(socket, message, critical = false) {
+function sendFrame(socket, frame, critical = false) {
   if (socket.readyState !== WebSocket.OPEN) return false;
   if (socket.bufferedAmount > MAX_QUEUED_BYTES) {
     if (critical) socket.close(CLOSE.busy, "Client cannot keep up");
     return false;
   }
-  socket.send(JSON.stringify({ v: VERSION, ...message }), (error) => {
+  socket.send(frame, (error) => {
     if (error) socket.terminate();
   });
   return true;
+}
+
+export function send(socket, message, critical = false) {
+  return sendFrame(
+    socket,
+    JSON.stringify({ v: VERSION, ...message }),
+    critical,
+  );
 }
 
 export function attachWebSockets(
@@ -31,6 +42,7 @@ export function attachWebSockets(
     heartbeatMs = 15_000,
     onError = console.error,
     rateOptions,
+    matches = new Map(),
     onReject = console.warn,
   } = {},
 ) {
@@ -80,6 +92,11 @@ export function attachWebSockets(
     state.room = undefined;
     subscriptions.get(room)?.delete(socket);
     room.leave(player.id);
+    state.match.leave(player.netId);
+    if (room.size === 0) {
+      state.match.stop();
+      matches.delete(room.id);
+    }
   }
 
   function reject(socket, code, reason) {
@@ -87,9 +104,15 @@ export function attachWebSockets(
     socket.close(code, reason);
   }
 
-  wss.on("connection", (socket) => {
+  wss.on("connection", (socket, request) => {
     const state = {
       allowed: tokenBucket(rateOptions),
+      allowedInput: tokenBucket({ rate: 45, burst: 24 }),
+      codec:
+        new URL(request.url, "http://localhost").searchParams.get("codec") ===
+        "json"
+          ? "json"
+          : "binary",
       waitingPong: false,
       missed: 0,
     };
@@ -116,24 +139,73 @@ export function attachWebSockets(
 
     socket.on("message", (data, binary) => {
       if (socket.readyState !== WebSocket.OPEN || closing) return;
-      if (!state.allowed()) {
-        reject(socket, CLOSE.rate, "Rate limit exceeded");
-        return;
-      }
-
-      let message;
       try {
-        message = decode(data, binary);
+        const text = binary ? "" : data.toString("utf8");
+        let header;
+        if (!binary) {
+          try {
+            header = JSON.parse(text);
+          } catch {}
+        }
+        if (binary || (header?.v === 1 && header.type === "input")) {
+          if (!state.room)
+            throw new ProtocolError(CLOSE.badMessage, "Join first");
+          if (!state.allowedInput())
+            throw new ProtocolError(CLOSE.rate, "Input rate exceeded");
+          if (binary !== (state.codec === "binary"))
+            throw new ProtocolError(CLOSE.badMessage, "Wrong codec");
+          let input;
+          try {
+            input = binary ? decodeInput(data) : decodeJsonInput(text);
+          } catch {
+            throw new ProtocolError(CLOSE.badMessage, "Invalid input packet");
+          }
+          state.match.accept(state.player.netId, input);
+          return;
+        }
+
+        if (!state.allowed())
+          throw new ProtocolError(CLOSE.rate, "Rate limit exceeded");
+        if (header?.v === 1 && header.type === "ping") {
+          if (
+            !state.room ||
+            Object.keys(header).length !== 3 ||
+            !Number.isInteger(header.id) ||
+            header.id < 1 ||
+            header.id > 0xffffffff
+          ) {
+            throw new ProtocolError(CLOSE.badMessage, "Invalid ping");
+          }
+          sendFrame(socket, encodeJson({ v: 1, type: "pong", id: header.id }));
+          return;
+        }
+
+        const message = decode(data, binary);
         if (message.type === "join") {
           if (state.room)
             throw new ProtocolError(CLOSE.badMessage, "Already joined");
           const room = rooms.get(message.room);
           if (!room) throw new ProtocolError(CLOSE.missing, "Room not found");
-          const player = { id: randomUUID(), name: message.name };
-          const members = watchRoom(room);
-          if (!room.join(player))
+          if (room.size >= room.maxPlayers)
             throw new ProtocolError(CLOSE.full, "Room full");
+          let match = matches.get(room.id);
+          if (!match) {
+            match = new Match(room.arena);
+            matches.set(room.id, match);
+            match.start();
+          }
+          const netId = match.join((snapshot) => {
+            const packet =
+              state.codec === "json"
+                ? encodeJson(snapshot)
+                : encodeSnapshot(snapshot);
+            sendFrame(socket, packet);
+          });
+          const player = { id: randomUUID(), name: message.name, netId };
+          const members = watchRoom(room);
+          room.join(player);
           state.room = room;
+          state.match = match;
           state.player = player;
           members.add(socket);
           clearTimeout(deadline);
@@ -144,6 +216,8 @@ export function attachWebSockets(
               room: room.info(),
               player,
               replayId: room.replayId,
+              seed: match.seed,
+              codec: state.codec,
             },
             true,
           );

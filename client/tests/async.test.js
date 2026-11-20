@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import test from "node:test";
+import { Asteroid } from "@dogfight/shared/sim/asteroid";
+import { Game } from "@dogfight/shared/sim/game";
+import { Vector2 } from "@dogfight/shared/sim/vector";
 import {
   delay,
   fetchJson,
@@ -10,9 +13,6 @@ import {
 } from "../src/assets/http.js";
 import { loadAll, loadAudio } from "../src/assets/loader.js";
 import { Lobby } from "../src/lobby/lobby.js";
-import { Asteroid } from "../src/sim/asteroid.js";
-import { Game } from "../src/sim/game.js";
-import { Vector2 } from "../src/sim/vector.js";
 
 test("HTTP 404 і битий JSON не ретраяться, а 5xx ретраїться з backoff", async (t) => {
   const statuses = [404, 200, 503, 503, 200];

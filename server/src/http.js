@@ -122,11 +122,20 @@ function method(response, options) {
   json(response, 405, { error: "Method not allowed" });
 }
 
-async function route(request, response, config, rooms) {
+async function route(request, response, config, rooms, matches) {
   const path = safePath(request.url);
   if (path === "/health") {
     if (request.method !== "GET") return method(response, "GET");
     return json(response, 200, { status: "ok" });
+  }
+  if (path === "/api/stats") {
+    if (request.method !== "GET") return method(response, "GET");
+    return json(response, 200, {
+      matches: [...matches].map(([room, match]) => ({
+        room,
+        ...match.stats(),
+      })),
+    });
   }
   if (path === "/api/rooms") {
     if (request.method === "GET") return json(response, 200, rooms.list());
@@ -171,9 +180,9 @@ async function route(request, response, config, rooms) {
   );
 }
 
-export function httpHandler(config, rooms, onError) {
+export function httpHandler(config, rooms, onError, matches) {
   return (request, response) => {
-    void route(request, response, config, rooms).catch((error) => {
+    void route(request, response, config, rooms, matches).catch((error) => {
       if (
         error instanceof HttpProblem &&
         !response.headersSent &&

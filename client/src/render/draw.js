@@ -1,5 +1,5 @@
-import { ARENA, lerpWrapped } from "../sim/arena.js";
-import { TAU } from "../sim/flight.js";
+import { ARENA, lerpWrapped } from "@dogfight/shared/sim/arena";
+import { TAU } from "@dogfight/shared/sim/flight";
 
 export function interpolateShip(previous, current, alpha) {
   return {

@@ -21,7 +21,8 @@ await withServer("loop", async ({ base, port }) => {
         socket.off("message", handle);
         reject(new Error(`Missing ${type}`));
       }, 3000);
-      function handle(raw) {
+      function handle(raw, binary) {
+        if (binary) return;
         const message = JSON.parse(raw);
         if (message.type !== type || (expected && message.text !== expected))
           return;

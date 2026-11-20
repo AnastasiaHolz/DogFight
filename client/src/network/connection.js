@@ -1,3 +1,6 @@
+import { decodeSnapshot, encodeInput } from "@dogfight/shared/codec/binary";
+import { decodeJsonSnapshot, encodeJson } from "@dogfight/shared/codec/json";
+
 const terminalCodes = new Set([1000, 1003, 1007, 1008, 1009, 4403, 4404, 4429]);
 const events = new Set(["joined", "roster", "chat"]);
 const reasons = {
@@ -14,6 +17,8 @@ export function webSocketUrl(location) {
 
 export class RoomConnection extends EventTarget {
   #socket;
+  #gameTimers = new Set();
+  #codec;
   #queue = [];
   #attempt = 0;
   #timer;
@@ -28,6 +33,7 @@ export class RoomConnection extends EventTarget {
     Socket = WebSocket,
     backoff = 250,
     maxBackoff = 4000,
+    network = { latency: 0, jitter: 0, loss: 0 },
   }) {
     super();
     this.url = url;
@@ -36,12 +42,14 @@ export class RoomConnection extends EventTarget {
     this.Socket = Socket;
     this.backoff = backoff;
     this.maxBackoff = maxBackoff;
+    this.network = network;
   }
 
   connect() {
     if (this.#stopped || this.#socket || this.#timer !== undefined) return;
     const socket = new this.Socket(this.url);
     this.#socket = socket;
+    socket.binaryType = "arraybuffer";
     this.#emit("status", "Підключення до сервера…");
 
     socket.addEventListener("open", () => {
@@ -58,15 +66,34 @@ export class RoomConnection extends EventTarget {
 
     socket.addEventListener("message", ({ data }) => {
       if (this.#socket !== socket) return;
+      if (data instanceof ArrayBuffer) {
+        this.#emit("traffic", { received: data.byteLength });
+        if (this.#joined)
+          this.#later(socket, () => this.#readSnapshot(data), true);
+        return;
+      }
       let message;
       try {
         message = JSON.parse(data);
       } catch {
         return;
       }
+      if (message?.v === 1 && message.type === "snapshot") {
+        this.#emit("traffic", {
+          received: new TextEncoder().encode(data).byteLength,
+        });
+        if (this.#joined)
+          this.#later(socket, () => this.#readSnapshot(data), true);
+        return;
+      }
+      if (message?.v === 1 && message.type === "pong") {
+        this.#later(socket, () => this.#emit("pong", message), false);
+        return;
+      }
       if (message?.v !== 0 || !events.has(message.type)) return;
       if (message.type === "joined") {
         this.#joined = true;
+        this.#codec = message.codec;
         this.#attempt = 0;
         this.#emit("status", "Підключено.");
       }
@@ -81,6 +108,7 @@ export class RoomConnection extends EventTarget {
       if (this.#socket !== socket) return;
       this.#socket = undefined;
       this.#joined = false;
+      this.#clearGameTimers();
       clearTimeout(this.#pumpTimer);
       this.#pumpTimer = undefined;
       if (this.#stopped) return;
@@ -98,6 +126,87 @@ export class RoomConnection extends EventTarget {
         this.connect();
       }, wait);
     });
+  }
+
+  #clearGameTimers() {
+    for (const timer of this.#gameTimers) clearTimeout(timer);
+    this.#gameTimers.clear();
+  }
+
+  #later(socket, work, droppable) {
+    if (
+      droppable &&
+      this.network.loss > 0 &&
+      Math.random() * 100 < this.network.loss
+    )
+      return;
+    const spread = this.network.jitter
+      ? (Math.random() * 2 - 1) * this.network.jitter
+      : 0;
+    const delay = Math.max(0, this.network.latency + spread);
+    if (!delay) {
+      work();
+      return;
+    }
+    if (this.#gameTimers.size >= 256) return;
+    const task = setTimeout(() => {
+      this.#gameTimers.delete(task);
+      if (this.#socket === socket) work();
+    }, delay);
+    this.#gameTimers.add(task);
+  }
+
+  #readSnapshot(data) {
+    try {
+      this.#emit(
+        "snapshot",
+        typeof data === "string"
+          ? decodeJsonSnapshot(data)
+          : decodeSnapshot(data),
+      );
+    } catch {}
+  }
+
+  get ready() {
+    return this.#joined && this.#socket?.readyState === this.Socket.OPEN;
+  }
+
+  sendInput(input) {
+    if (!this.ready) return false;
+    const socket = this.#socket;
+    const packet =
+      this.#codec === "json" ? encodeJson(input) : encodeInput(input);
+    const bytes =
+      typeof packet === "string"
+        ? new TextEncoder().encode(packet).byteLength
+        : packet.byteLength;
+    this.#later(
+      socket,
+      () => {
+        if (
+          socket.readyState !== this.Socket.OPEN ||
+          socket.bufferedAmount > 64 * 1024
+        )
+          return;
+        socket.send(packet);
+        this.#emit("traffic", { sent: bytes });
+      },
+      true,
+    );
+    return true;
+  }
+
+  probe(id) {
+    if (!this.ready) return;
+    const socket = this.#socket;
+    this.#later(
+      socket,
+      () => {
+        if (socket.readyState === this.Socket.OPEN)
+          socket.send(encodeJson({ v: 1, type: "ping", id }));
+      },
+      false,
+    );
   }
 
   #emit(name, detail) {
@@ -137,6 +246,7 @@ export class RoomConnection extends EventTarget {
 
   stop() {
     this.#stopped = true;
+    this.#clearGameTimers();
     clearTimeout(this.#timer);
     clearTimeout(this.#pumpTimer);
     this.#timer = undefined;
