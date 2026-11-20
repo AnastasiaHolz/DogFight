@@ -1,21 +1,27 @@
 {
   "name": "dogfight",
   "version": "1.0.0",
-  "directories": {
-    "test": "tests"
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=24"
   },
   "scripts": {
-    "test": "node --test",
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
     "check": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "test": "npm test --workspaces",
+    "bench:replay": "npm run bench:replay -w server",
+    "demo:loop": "npm run demo:loop -w server"
   },
-  "type": "module",
-  "private": true,
   "devDependencies": {
-    "@biomejs/biome": "^2.6.8",
-    "vite": "^8.3.8"
+    "@biomejs/biome": "^2.6.8"
   }
 }

@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0a101b" />
-    <title>Dogfight — Lab 03</title>
+    <title>Dogfight — Lab 04</title>
   </head>
   <body>
     <main>
       <header>
-        <p class="eyebrow">JAVASCRIPT / LAB 03</p>
+        <p class="eyebrow">JAVASCRIPT / LAB 04</p>
         <h1>Dogfight <span>·</span> Орбітальна арена</h1>
-        <p>Передпольотна підготовка, вибір арени й локальні бої.</p>
+        <p>Серверні кімнати й чат. Рух корабля поки обчислюється локально.</p>
       </header>
       <canvas id="arena" aria-label="Ігрова арена з космічним кораблем">
         Для гри потрібна підтримка Canvas 2D.
@@ -27,7 +27,8 @@
         <p class="eyebrow">МІСІЯ / ВИБІР КІМНАТИ</p>
         <h2 id="lobby-title">Лобі</h2>
         <p id="startup-summary"></p>
-        <form>
+        <p id="room-notice" role="status"></p>
+        <form id="join-form">
           <label for="pilot">Ім’я пілота</label>
           <input id="pilot" name="pilot" placeholder="Наприклад, Nova" autocomplete="nickname" maxlength="24" required />
           <label for="room">Кімната</label>
@@ -41,6 +42,19 @@
           </div>
         </form>
         <p id="rooms-status" role="status">Отримуємо список кімнат…</p>
+        <form id="create-form">
+          <label for="new-room">Назва нової кімнати</label>
+          <input id="new-room" name="name" maxlength="40" placeholder="Наприклад, Орбітальний загін" required />
+          <label for="preset">Арена</label>
+          <select id="preset" name="preset">
+            <option value="orbit">Орбітальний полігон</option>
+            <option value="nebula">Туманність</option>
+            <option value="debris">Пояс уламків</option>
+          </select>
+          <div class="action-row">
+            <button type="submit">Створити кімнату</button>
+          </div>
+        </form>
       </section>
       <section id="game-panel" hidden aria-label="Керування грою">
         <div class="action-row game-actions">
@@ -48,7 +62,22 @@
           <button id="mute-audio" type="button" aria-pressed="false">Вимкнути звук</button>
           <p id="game-room"></p>
         </div>
+        <section id="room-chat" class="panel" aria-labelledby="chat-title">
+          <h2 id="chat-title">Чат кімнати</h2>
+          <p id="network-status" role="status"></p>
+          <p id="roster">Гравці: —</p>
+          <ul id="chat-log" role="log" aria-label="Повідомлення чату"></ul>
+          <form id="chat-form" class="action-row">
+            <label for="chat-text">Повідомлення</label>
+            <input id="chat-text" name="message" maxlength="240" autocomplete="off" required />
+            <button type="submit">Надіслати</button>
+          </form>
+        </section>
       </section>
+      <p id="replay-info" hidden>
+        <a id="replay-link" href="./">Завантажити NDJSON-лог</a>
+        <span>Доступний після виходу останнього гравця з кімнати.</span>
+      </p>
       <p id="keys" class="keys" hidden>
         <kbd>W</kbd> / <kbd>↑</kbd> тяга
         <span>·</span>

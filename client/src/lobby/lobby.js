@@ -82,6 +82,39 @@ export class Lobby extends EventTarget {
     }
   }
 
+  async create(name, preset) {
+    const session = this.#session;
+    if (!session) return;
+    try {
+      const room = await this.request(
+        this.url,
+        timedSignal(session.signal, this.timeoutMs),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), preset }),
+        },
+      );
+      await this.#pending;
+      if (this.#session !== session) return;
+      this.#rooms = [
+        ...this.#rooms.filter((item) => item.id !== room.id),
+        room,
+      ];
+      this.emit("roomsChanged", this.#rooms);
+      this.emit("roomCreated", room);
+    } catch (error) {
+      if (this.#session !== session) return;
+      const reason =
+        error.status === 409
+          ? "Досягнуто ліміту кімнат."
+          : error.status === 400
+            ? "Перевірте назву кімнати й арену."
+            : "Не вдалося створити кімнату.";
+      this.emit("joinError", reason);
+    }
+  }
+
   join(roomId, name) {
     if (!this.#session) return false;
     const room = this.#rooms.find((item) => item.id === roomId);

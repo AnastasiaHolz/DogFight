@@ -16,6 +16,9 @@ export function createInput(target) {
 
   function onKeyDown(event) {
     if (
+      event.target?.closest?.(
+        "input, textarea, select, button, a, [contenteditable]",
+      ) ||
       !controls.has(event.code) ||
       event.ctrlKey ||
       event.metaKey ||

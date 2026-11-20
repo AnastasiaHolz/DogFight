@@ -13,6 +13,8 @@ import { startLab01 } from "./lab01.js";
 import { Lobby } from "./lobby/lobby.js";
 import { mountLobbyView } from "./lobby/view.js";
 import { createLoop } from "./loop.js";
+import { mountChatView } from "./network/chat-view.js";
+import { RoomConnection, webSocketUrl } from "./network/connection.js";
 import { createCanvas } from "./render/canvas.js";
 import { createHud } from "./render/hud.js";
 import { drawLoading } from "./render/loading.js";
@@ -55,6 +57,10 @@ function startApplication() {
   const loadStatus = document.querySelector("#load-status");
   const startupSummary = document.querySelector("#startup-summary");
   const mute = document.querySelector("#mute-audio");
+  const notice = document.querySelector("#room-notice");
+  const replayInfo = document.querySelector("#replay-info");
+  const replayLink = document.querySelector("#replay-link");
+  let replayId;
   let loading;
   let loaded;
   let stopGame;
@@ -69,6 +75,7 @@ function startApplication() {
     gamePanel.hidden = name !== "game";
     keys.hidden = name !== "game";
     arenaCanvas.hidden = name === "lobby";
+    replayInfo.hidden = name !== "lobby" || !replayId;
   }
 
   function paintLoading() {
@@ -149,7 +156,8 @@ function startApplication() {
     audio.listen(events, loaded, match.signal);
     document.querySelector("#game-room").textContent =
       `${playerName} · ${room.name} · ${arena.width} × ${arena.height}`;
-    show("game");
+    arenaCanvas.tabIndex = 0;
+    arenaCanvas.focus({ preventScroll: true });
 
     const loop = createLoop({
       simulate(dt) {
@@ -166,15 +174,56 @@ function startApplication() {
       },
     });
     loop.start();
-    stopGame = () => {
+    return () => {
       loop.stop();
       keyboard.destroy();
       match.abort();
     };
   }
 
+  function enter({ room, playerName }) {
+    notice.textContent = "";
+    const connection = new RoomConnection({
+      url: webSocketUrl(window.location),
+      room: room.id,
+      name: playerName,
+    });
+    const networkScope = new AbortController();
+    const networkOptions = { signal: networkScope.signal };
+    let stopLocal;
+    show("game");
+    document.querySelector("#game-room").textContent =
+      `${playerName} · ${room.name}`;
+    drawLoading(canvas.resize(), { status: "Приєднання до кімнати" });
+    mountChatView(connection, gamePanel, networkScope.signal);
+
+    stopGame = () => {
+      networkScope.abort();
+      connection.stop();
+      stopLocal?.();
+    };
+    connection.addEventListener(
+      "joined",
+      ({ detail }) => {
+        replayId = detail.replayId;
+        replayLink.href = `/api/replays/${encodeURIComponent(replayId)}`;
+        if (!stopLocal) stopLocal = play({ room: detail.room, playerName });
+      },
+      networkOptions,
+    );
+    connection.addEventListener(
+      "terminal",
+      ({ detail }) => {
+        notice.textContent = detail;
+        showLobby();
+      },
+      networkOptions,
+    );
+    connection.connect();
+  }
+
   mountLobbyView(lobby, lobbyPanel, signal);
-  lobby.addEventListener("joined", ({ detail }) => play(detail), { signal });
+  lobby.addEventListener("joined", ({ detail }) => enter(detail), { signal });
   loadStart.addEventListener("click", () => void load(), { signal });
   loadCancel.addEventListener("click", () => loading?.abort(), { signal });
   document

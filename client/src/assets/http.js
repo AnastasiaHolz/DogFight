@@ -6,14 +6,14 @@ export class HttpError extends Error {
   }
 }
 
-export async function fetchChecked(url, signal) {
-  const response = await fetch(url, { signal, cache: "no-store" });
+export async function fetchChecked(url, signal, options) {
+  const response = await fetch(url, { ...options, signal, cache: "no-store" });
   if (!response.ok) throw new HttpError(response, url);
   return response;
 }
 
-export async function fetchJson(url, signal) {
-  const response = await fetchChecked(url, signal);
+export async function fetchJson(url, signal, options) {
+  const response = await fetchChecked(url, signal, options);
   return response.json();
 }
 

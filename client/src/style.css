@@ -141,3 +141,38 @@ button:not(:disabled) {
 #startup-summary {
   font-size: 0.9rem;
 }
+#create-form {
+  padding-top: 18px;
+  border-top: 1px solid #2a415a;
+}
+#chat-title {
+  margin-top: 0;
+}
+#network-status,
+#roster,
+#replay-info {
+  color: #abc1dc;
+}
+#chat-log {
+  min-height: 2rem;
+  max-height: 10rem;
+  padding: 10px 14px;
+  overflow-y: auto;
+  border: 1px solid #2a415a;
+  border-radius: 8px;
+  list-style: none;
+}
+#chat-log li {
+  padding: 2px 0;
+  overflow-wrap: anywhere;
+}
+#chat-text {
+  min-width: 130px;
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #395775;
+  border-radius: 6px;
+  background: #0c1524;
+  color: inherit;
+  font: inherit;
+}
